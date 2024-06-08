@@ -1,12 +1,11 @@
 package com.stein.mahoyinkuima
 
 import android.os.Bundle
-import androidx.compose.foundation.layout.padding
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -16,13 +15,15 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.navigation.NavDestination
-import androidx.navigation.NavDestination.Companion.hierarchy
-import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavController
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.stein.mahoyinkuima.ui.theme.MahoyinkuimaTheme
 
@@ -43,9 +44,17 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun Greeting(name: String) {
+    val navController = rememberNavController()
     MaterialTheme {
         Scaffold(bottomBar = { BottomBar(navController = rememberNavController()) }) { padding ->
-            Text(text="I love android${name}", modifier = Modifier.fillMaxSize().padding(padding))
+            NavHost(navController = navController, startDestination = BottomBarScreen.Home.route) {
+                composable(BottomBarScreen.Home.route) {
+                    Text(
+                            text = "I love android${name}",
+                            modifier = Modifier.fillMaxSize().padding(padding)
+                    )
+                }
+            }
         }
     }
 }
@@ -60,21 +69,24 @@ fun DefaultPreview() {
 private fun BottomBar(
         navController: NavHostController,
 ) {
+    var selectedDestion by remember { mutableIntStateOf(0) }
+
     val screens = listOf(BottomBarScreen.Home, BottomBarScreen.Profile, BottomBarScreen.Settings)
-    val navBackStackEnty by navController.currentBackStackEntryAsState()
-    val currentDestination = navBackStackEnty?.destination
 
-    val bottomBarDestination = screens.any { it.route == currentDestination?.route }
-
-    if (bottomBarDestination) {
-        NavigationBar {
-            screens.forEach { screen ->
-                AddItem(
-                        screen = screen,
-                        currentDestination = currentDestination,
-                        navController = navController
-                )
+    val callback =
+            NavController.OnDestinationChangedListener end@{ _, destination, _ ->
+                if (destination.route == null) return@end
+                val index = screens.withIndex().first { destination.route == it.value.route }.index
+                if (index >= 0) selectedDestion = index
             }
+    navController.addOnDestinationChangedListener(callback)
+    NavigationBar {
+        screens.forEachIndexed { index, screen ->
+            AddItem(
+                    screen = screen,
+                    isSelected = index == selectedDestion,
+                    navController = navController
+            )
         }
     }
 }
@@ -82,20 +94,15 @@ private fun BottomBar(
 @Composable
 fun RowScope.AddItem(
         screen: BottomBarScreen,
-        currentDestination: NavDestination?,
+        isSelected: Boolean,
         navController: NavHostController
 ) {
     NavigationBarItem(
             label = { Text(text = screen.title) },
             icon = { Icon(imageVector = screen.icon, contentDescription = "Navigation Icon") },
-            selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
+            selected = isSelected,
             // unselectedContentColor = LocalContentColor.current.copy(alpha =
             // ContentAlpha.disabled),
-            onClick = {
-                navController.navigate(screen.route) {
-                    popUpTo(navController.graph.findStartDestination().id)
-                    launchSingleTop = true
-                }
-            }
+            onClick = { navController.navigate(screen.route) }
     )
 }
