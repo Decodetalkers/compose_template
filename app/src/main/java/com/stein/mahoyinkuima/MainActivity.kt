@@ -4,42 +4,25 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MaterialTheme.colorScheme
-import androidx.compose.material3.MaterialTheme.shapes
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -48,6 +31,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.room.Room
 import com.stein.mahoyinkuima.db.ChatHistoryDataBase
 import com.stein.mahoyinkuima.db.ChatHistoryModel
+import com.stein.mahoyinkuima.file.PhoneInfoModel
 import com.stein.mahoyinkuima.ui.theme.MahoyinkuimaTheme
 
 class MainActivity : ComponentActivity() {
@@ -68,75 +52,33 @@ class MainActivity : ComponentActivity() {
             )
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         setContent {
             MahoyinkuimaTheme {
                 // A surface container using the 'background' color from the theme
                 Surface(
                         modifier = Modifier.fillMaxSize(),
                         // color = MaterialTheme.colorScheme.background
-                        ) { Greeting("Android", viewModel) }
+                        ) { Greeting(viewModel) }
             }
         }
     }
 }
 
 @Composable
-fun Greeting(name: String, dbModel: ChatHistoryModel) {
+fun Greeting(dbModel: ChatHistoryModel) {
     val navController = rememberNavController()
+    val phoneModel: PhoneInfoModel = viewModel()
+    phoneModel.load()
 
     // NOTE: just hack it now
-    val hasKey = dbModel.getKey().collectAsState(initial = listOf("emptykey"))
     MaterialTheme {
-        Scaffold(bottomBar = { BottomBar(navController = rememberNavController()) }) { padding ->
+        Scaffold(bottomBar = { BottomBar(navController) }) { padding ->
             NavHost(navController = navController, startDestination = BottomBarScreen.Home.route) {
-                composable(BottomBarScreen.Home.route) {
-                    Text(
-                            text = "I love android${name}",
-                            modifier = Modifier.fillMaxSize().padding(padding)
-                    )
-                    if (hasKey.value.isEmpty()) {
-                        var id by remember { mutableStateOf(String()) }
-                        Dialog(onDismissRequest = {}) {
-                            Card(
-                                    modifier =
-                                            Modifier.fillMaxWidth().height(200.dp).padding(16.dp),
-                                    shape = RoundedCornerShape(16.dp)
-                            ) {
-                                Column(modifier = Modifier.fillMaxSize()) {
-                                    Text(
-                                            text = "please input a new id",
-                                            modifier =
-                                                    Modifier.fillMaxWidth()
-                                                            .padding(8.dp)
-                                                            .wrapContentSize(Alignment.Center),
-                                            textAlign = TextAlign.Center
-                                    )
-                                    OutlinedTextField(
-                                            value = id,
-                                            singleLine = true,
-                                            shape = shapes.large,
-                                            onValueChange = { value -> id = value },
-                                            colors =
-                                                    TextFieldDefaults.colors(
-                                                            focusedContainerColor =
-                                                                    colorScheme.surface,
-                                                            unfocusedContainerColor =
-                                                                    colorScheme.surface,
-                                                            disabledContainerColor =
-                                                                    colorScheme.surface,
-                                                    ),
-                                            label = { Text("id") },
-                                            isError = false,
-                                            keyboardActions =
-                                                    KeyboardActions(
-                                                            onDone = { dbModel.updateKey(id) }
-                                                    )
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
+                composable(BottomBarScreen.Home.route) { Text("aa") }
+
+                composable(BottomBarScreen.Profile.route) { Text("aa") }
+                composable(BottomBarScreen.Settings.route) { Text("aa") }
             }
         }
     }
