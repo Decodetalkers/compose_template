@@ -11,6 +11,20 @@
                   <entry key="Duration" value="90" />
                   <entry key="Google Pixel 3" value="120" />
                   <entry key="Tests" value="360" />
+                  <entry key="ZTE A302ZT" value="120" />
+                </map>
+              </option>
+            </AndroidTestResultsTableState>
+          </value>
+        </entry>
+        <entry key="910166839">
+          <value>
+            <AndroidTestResultsTableState>
+              <option name="preferredColumnWidths">
+                <map>
+                  <entry key="Duration" value="90" />
+                  <entry key="Tests" value="360" />
+                  <entry key="ZTE A302ZT" value="120" />
                 </map>
               </option>
             </AndroidTestResultsTableState>
