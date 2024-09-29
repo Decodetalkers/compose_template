@@ -93,7 +93,7 @@ fun InformationPage(model: PhoneInfoModel, dp: PaddingValues? = null) {
                         modifier = glModifier,
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally
-                ) { Text("Waiting") }
+                ) { Text(text = "Loading....", fontWeight = FontWeight.Bold) }
     }
 }
 
