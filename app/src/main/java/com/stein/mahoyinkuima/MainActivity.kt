@@ -132,8 +132,6 @@ fun RowScope.AddItem(
             label = { Text(text = screen.title) },
             icon = { Icon(imageVector = screen.icon, contentDescription = "Navigation Icon") },
             selected = isSelected,
-            // unselectedContentColor = LocalContentColor.current.copy(alpha =
-            // ContentAlpha.disabled),
             onClick = { navController.navigate(screen.route) }
     )
 }
