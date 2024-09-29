@@ -21,11 +21,24 @@ sealed class Resource<out T> {
     data class Failure(val message: String) : Resource<Nothing>()
 }
 
-data class UpdateTime(val minuet: String, val second: String)
+data class UpdateTime(val minute: String, val second: String)
+
+fun UpdateTime.display(): String {
+    return "min: ${this.minute} second: ${this.second}"
+}
 
 data class Memory(val freeMemory: String, val totalMemory: String)
 
-data class CpuDataInfo(val name: String, val coreNumber: Int)
+fun Memory.display(): String {
+    return "freeMemory: ${this.freeMemory} total: ${this.totalMemory}"
+}
+
+data class CpuDataInfo(val hardware: String, val coreNumber: Int)
+
+fun CpuDataInfo.display(): String {
+
+    return "hardware: ${this.hardware} core: ${this.coreNumber}"
+}
 
 data class PhoneInfo(val memory: Memory, val cpuInfo: CpuDataInfo)
 
@@ -43,16 +56,16 @@ suspend fun readCpu(): CpuDataInfo {
     if (cpuinfos.isEmpty()) {
         return CpuDataInfo("Unknown", 1)
     }
-    val coreNumber = cpuinfos.size
-    var name = ""
-    val line_1 = cpuinfos[0]
+    val coreNumber = cpuinfos.size - 1
+    var hardware = ""
+    val line_1 = cpuinfos[coreNumber]
     for (line in line_1.lines()) {
-        if (line.startsWith("model name:")) {
-            name = line.removePrefix("model name").trim()
+        if (line.startsWith("Hardware")) {
+            hardware = line.removePrefix("Hardware").replace(":", "").trim()
         }
     }
 
-    return CpuDataInfo(name, coreNumber)
+    return CpuDataInfo(hardware, coreNumber)
 }
 
 suspend fun readMem(): Memory {
@@ -64,9 +77,9 @@ suspend fun readMem(): Memory {
             break
         }
         if (lin.startsWith("MemTotal:")) {
-            total = lin.removePrefix("MemTotal:").removeSuffix("kB").trim()
+            total = lin.removePrefix("MemTotal:").removeSuffix("kB").trimStart().trimEnd()
         } else if (lin.startsWith("MemFree:")) {
-            free_mem = lin.removePrefix("MemFree::").removeSuffix("kB").trim()
+            free_mem = lin.removePrefix("MemFree:").removeSuffix("kB").trimStart().trimEnd()
         }
     }
 
@@ -102,8 +115,6 @@ class PhoneInfoModel : ViewModel() {
         if (thestate is Resource.Success || thestate is Resource.Loading) return
         viewModelScope.launch {
             state.value = Resource.Loading
-            // val updateTime = readUpdateTime()
-
             val cpuInfo = readCpu()
             val memory = readMem()
             state.value = Resource.Success(PhoneInfo(memory, cpuInfo))
