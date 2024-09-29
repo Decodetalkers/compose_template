@@ -70,8 +70,8 @@ suspend fun readCpu(): CpuDataInfo {
     }
     val coreNumber = cpuinfos.size - 1
     var hardware = ""
-    val line_1 = cpuinfos[coreNumber]
-    for (line in line_1.lines()) {
+    val line1 = cpuinfos[coreNumber]
+    for (line in line1.lines()) {
         if (line.startsWith("Hardware")) {
             hardware = line.removePrefix("Hardware").replace(":", "").trim()
         }
