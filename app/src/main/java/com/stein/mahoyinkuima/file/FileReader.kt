@@ -13,46 +13,58 @@ import kotlinx.coroutines.withContext
 const val UpdateTimeFile = "/proc/uptime"
 const val CpuInfo = "/proc/cpuinfo"
 const val MemInfo = "/proc/meminfo"
+const val Felica = "/etc/felica/mfs.cfg"
 
 sealed class Resource<out T> {
-    object Loading : Resource<Nothing>()
-    object Begin : Resource<Nothing>()
+    data object Loading : Resource<Nothing>()
+    data object Begin : Resource<Nothing>()
     data class Success<out T>(val data: T) : Resource<T>()
-    data class Failure(val message: String) : Resource<Nothing>()
-}
-
-data class UpdateTime(val minute: String, val second: String)
-
-fun UpdateTime.display(): String {
-    return "min: ${this.minute} second: ${this.second}"
 }
 
 data class Memory(val freeMemory: String, val totalMemory: String)
 
-fun Memory.display(): String {
-    return "freeMemory: ${this.freeMemory} total: ${this.totalMemory}"
-}
-
 data class CpuDataInfo(val hardware: String, val coreNumber: Int)
 
-fun CpuDataInfo.display(): String {
+data class FelicaData(val trouble: String, val region: String, val market: String)
 
-    return "hardware: ${this.hardware} core: ${this.coreNumber}"
+data class PhoneInfo(val memory: Memory, val cpuInfo: CpuDataInfo, val felicaData: FelicaData?)
+
+suspend fun readFile(fileName: String): String? {
+    return withContext(Dispatchers.IO) {
+        val file = File(fileName)
+        if (!file.exists()) {
+            null
+        } else {
+            val fis = FileInputStream(File(fileName)) // 2nd line
+            fis.bufferedReader().use { it.readText() }
+        }
+    }
 }
 
-data class PhoneInfo(val memory: Memory, val cpuInfo: CpuDataInfo)
-
-suspend fun readFile(fileName: String): String {
-    return withContext(Dispatchers.IO) {
-        val fis = FileInputStream(File(fileName)) // 2nd line
-        fis.bufferedReader().use { it.readText() }
+suspend fun readFelica(): FelicaData? {
+    val data = readFile(Felica)
+    if (data.isNullOrEmpty()) {
+        return null
     }
+    var trouble = ""
+    var region = ""
+    var market = ""
+    for (line in data.lines()) {
+        if (line.startsWith("0202030A,")) {
+            trouble = line.removePrefix("0202030A,")
+        } else if (line.startsWith("0202030C,")) {
+            region = line.removePrefix("0202030C,")
+        } else if (line.startsWith("02020A04,")) {
+            market = line.removePrefix("02020A04,")
+        }
+    }
+    return FelicaData(trouble, region, market)
 }
 
 suspend fun readCpu(): CpuDataInfo {
     val data = readFile(CpuInfo)
 
-    val cpuinfos = data.trim().split("\n\n")
+    val cpuinfos = data!!.trim().split("\n\n")
     if (cpuinfos.isEmpty()) {
         return CpuDataInfo("Unknown", 1)
     }
@@ -70,54 +82,37 @@ suspend fun readCpu(): CpuDataInfo {
 
 suspend fun readMem(): Memory {
     val data = readFile(MemInfo)
-    var free_mem = ""
+    var freeMem = ""
     var total = ""
-    for (lin in data.lines()) {
-        if (!free_mem.isEmpty() && !total.isEmpty()) {
+    for (lin in data!!.lines()) {
+        if (freeMem.isNotEmpty() && total.isNotEmpty()) {
             break
         }
         if (lin.startsWith("MemTotal:")) {
-            total = lin.removePrefix("MemTotal:").removeSuffix("kB").trimStart().trimEnd()
+            val tmptotal =
+                    lin.removePrefix("MemTotal:").removeSuffix("kB").trimStart().trimEnd().toFloat()
+            total = "${"%.2f".format(tmptotal / 1024.0)} Mib"
         } else if (lin.startsWith("MemFree:")) {
-            free_mem = lin.removePrefix("MemFree:").removeSuffix("kB").trimStart().trimEnd()
+            val tmpFree =
+                    lin.removePrefix("MemFree:").removeSuffix("kB").trimStart().trimEnd().toFloat()
+            freeMem = "${"%.2f".format(tmpFree / 1024.0)} Mib"
         }
     }
 
-    return Memory(free_mem, total)
-}
-
-suspend fun readUpdateTime(): UpdateTime {
-    val data = readFile(UpdateTimeFile)
-    val m_and_s = data.split(" ")
-    if (m_and_s.size != 2) {
-        return UpdateTime("", "")
-    }
-
-    val m = m_and_s[0]
-    val s = m_and_s[1]
-    val minitue_f = m.toFloatOrNull()
-    var minitue = ""
-    if (minitue_f != null) {
-        minitue = (minitue_f / 60.0).toUInt().toString()
-    }
-    val second_f = s.toFloatOrNull()
-    var second = ""
-    if (second_f != null) {
-        second = (second_f % 60.0).toUInt().toString()
-    }
-    return UpdateTime(minitue, second)
+    return Memory(freeMem, total)
 }
 
 class PhoneInfoModel : ViewModel() {
     val state = mutableStateOf<Resource<PhoneInfo>>(Resource.Begin)
     fun load() {
-        val thestate by state
-        if (thestate is Resource.Success || thestate is Resource.Loading) return
+        val theState by state
+        if (theState is Resource.Success || theState is Resource.Loading) return
         viewModelScope.launch {
             state.value = Resource.Loading
             val cpuInfo = readCpu()
             val memory = readMem()
-            state.value = Resource.Success(PhoneInfo(memory, cpuInfo))
+            val felicaData = readFelica()
+            state.value = Resource.Success(PhoneInfo(memory, cpuInfo, felicaData))
         }
     }
 }

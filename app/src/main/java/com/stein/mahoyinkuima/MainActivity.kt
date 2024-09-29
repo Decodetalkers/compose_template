@@ -23,6 +23,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -65,7 +66,13 @@ fun PhoneInfoView() {
                     InformationPage(model = phoneModel, dp = padding)
                 }
 
-                composable(BottomBarScreen.Settings.route) { Text("aa") }
+                composable(BottomBarScreen.Settings.route) {
+                    Column(
+                            modifier = Modifier.padding(padding).fillMaxSize(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                    ) { Text(text = "A Phone Info shown app", fontWeight = FontWeight.Bold) }
+                }
             }
         }
     }
@@ -100,7 +107,7 @@ fun DefaultPreview() {
 private fun BottomBar(
         navController: NavHostController,
 ) {
-    var selectedDestion by remember { mutableIntStateOf(0) }
+    var selectedDestination by remember { mutableIntStateOf(0) }
 
     val screens = listOf(BottomBarScreen.Home, BottomBarScreen.Settings)
 
@@ -108,14 +115,14 @@ private fun BottomBar(
             NavController.OnDestinationChangedListener end@{ _, destination, _ ->
                 if (destination.route == null) return@end
                 val index = screens.withIndex().first { destination.route == it.value.route }.index
-                if (index >= 0) selectedDestion = index
+                if (index >= 0) selectedDestination = index
             }
     navController.addOnDestinationChangedListener(callback)
     NavigationBar {
         screens.forEachIndexed { index, screen ->
             AddItem(
                     screen = screen,
-                    isSelected = index == selectedDestion,
+                    isSelected = index == selectedDestination,
                     navController = navController
             )
         }

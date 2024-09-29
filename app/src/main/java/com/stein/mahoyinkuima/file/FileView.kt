@@ -16,6 +16,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
 val LEFT_WIDTH_FULL = 125.dp
@@ -46,6 +47,48 @@ fun CpuDataInfo.View() {
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(text = coreNumber.toString(), modifier = Modifier.width(RIGHT_WIDTH_FULL))
+            }
+        }
+    }
+}
+
+@Composable
+fun FelicaData?.View() {
+    if (this == null) {
+        return Card { Text("This phone do not support felica") }
+    }
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+                modifier = Modifier.padding(all = 8.dp).fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Row {
+                Text(
+                        text = "Trouble:",
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.width(LEFT_WIDTH_FULL)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+
+                Text(text = trouble, modifier = Modifier.width(RIGHT_WIDTH_FULL))
+            }
+            Row {
+                Text(
+                        text = "Region:",
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.width(LEFT_WIDTH_FULL)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(text = region, modifier = Modifier.width(RIGHT_WIDTH_FULL))
+            }
+            Row {
+                Text(
+                        text = "market:",
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.width(LEFT_WIDTH_FULL)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(text = market, modifier = Modifier.width(RIGHT_WIDTH_FULL))
             }
         }
     }
@@ -93,8 +136,18 @@ fun PhoneInfo.View(dp: PaddingValues? = null) {
             horizontalAlignment = Alignment.Start,
             verticalArrangement = Arrangement.Top
     ) {
-        memory.View()
+        Text(
+                text = "BaseInfo",
+                modifier = Modifier.padding(all = 8.dp),
+                fontWeight = FontWeight.Bold
+        )
         Spacer(modifier = Modifier.height(15.dp))
+        memory.View()
+        Spacer(modifier = Modifier.height(10.dp))
         cpuInfo.View()
+        Spacer(modifier = Modifier.height(25.dp))
+        Text(text = "Felica", modifier = Modifier.padding(all = 8.dp), fontWeight = FontWeight.Bold)
+        Spacer(modifier = Modifier.height(15.dp))
+        felicaData.View()
     }
 }
