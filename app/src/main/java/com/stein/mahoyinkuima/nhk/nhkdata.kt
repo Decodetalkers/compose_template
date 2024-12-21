@@ -10,7 +10,7 @@ data class NhkNews(
         val outline: String,
         val outlineWithRuby: String,
         val body: String,
-        val bodyWithOutHtml: String,
+        val bodyWithoutHtml: String,
         val url: String,
         val m3u8Url: String,
         val imageUrl: String,

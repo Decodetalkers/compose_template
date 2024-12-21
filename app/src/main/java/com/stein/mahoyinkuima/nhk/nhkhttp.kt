@@ -7,13 +7,6 @@ import okhttp3.*
 
 val isoFormatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME
 
-sealed class Resource<out T> {
-    object Loading : Resource<Nothing>()
-    object Begin : Resource<Nothing>()
-    data class Success<out T>(val data: T) : Resource<T>()
-    data class Failure(val message: String) : Resource<Nothing>()
-}
-
 fun requestTodayNews(): Request {
     val now = LocalDateTime.now(ZoneOffset.UTC)
 

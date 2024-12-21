@@ -9,17 +9,12 @@ import java.io.FileInputStream
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.stein.mahoyinkuima.common.Resource
 
 const val UpdateTimeFile = "/proc/uptime"
 const val CpuInfo = "/proc/cpuinfo"
 const val MemInfo = "/proc/meminfo"
 const val Felica = "/etc/felica/mfs.cfg"
-
-sealed class Resource<out T> {
-    data object Loading : Resource<Nothing>()
-    data object Begin : Resource<Nothing>()
-    data class Success<out T>(val data: T) : Resource<T>()
-}
 
 data class Memory(val freeMemory: String, val totalMemory: String)
 

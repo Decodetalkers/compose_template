@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -31,9 +33,9 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.stein.mahoyinkuima.file.PhoneInfoModel
-import com.stein.mahoyinkuima.file.Resource
-import com.stein.mahoyinkuima.file.View
+import com.stein.mahoyinkuima.common.Resource
+import com.stein.mahoyinkuima.nhk.NewsView
+import com.stein.mahoyinkuima.nhk.NhKViewModel
 import com.stein.mahoyinkuima.ui.theme.MahoyinkuimaTheme
 
 class MainActivity : ComponentActivity() {
@@ -55,16 +57,14 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun PhoneInfoView() {
     val navController = rememberNavController()
-    val phoneModel: PhoneInfoModel = viewModel()
-    phoneModel.load()
+    val nhkView: NhKViewModel = viewModel()
+    nhkView.syncNews()
 
     // NOTE: just hack it now
     MaterialTheme {
         Scaffold(bottomBar = { BottomBar(navController) }) { padding ->
             NavHost(navController = navController, startDestination = BottomBarScreen.Home.route) {
-                composable(BottomBarScreen.Home.route) {
-                    InformationPage(model = phoneModel, dp = padding)
-                }
+                composable(BottomBarScreen.Home.route) { NhkPackage(model = nhkView, dp = padding) }
 
                 composable(BottomBarScreen.Settings.route) {
                     Column(
@@ -79,7 +79,7 @@ fun PhoneInfoView() {
 }
 
 @Composable
-fun InformationPage(model: PhoneInfoModel, dp: PaddingValues? = null) {
+fun NhkPackage(model: NhKViewModel, dp: PaddingValues? = null) {
     val state by model.state
     val glModifier =
             Modifier.fillMaxSize().let done@{
@@ -87,7 +87,10 @@ fun InformationPage(model: PhoneInfoModel, dp: PaddingValues? = null) {
                 it.padding(dp)
             }
     when (val smartCastData = state) {
-        is Resource.Success -> smartCastData.data.View()
+        is Resource.Success ->
+                LazyColumn(modifier = glModifier) {
+                    items(smartCastData.data) { data -> data.NewsView() }
+                }
         else ->
                 Column(
                         modifier = glModifier,

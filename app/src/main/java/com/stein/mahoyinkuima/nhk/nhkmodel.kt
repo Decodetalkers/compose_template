@@ -4,6 +4,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.stein.mahoyinkuima.common.Resource
 import java.io.IOException
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
@@ -15,9 +16,8 @@ import okhttp3.Response
 
 private val client = OkHttpClient()
 
-class NHKViewModel : ViewModel() {
-
-    val state = mutableStateOf<Resource<NhkNews>>(Resource.Begin)
+class NhKViewModel : ViewModel() {
+    val state = mutableStateOf<Resource<List<NhkNews>>>(Resource.Begin)
 
     fun clearStatue() {
         state.value = Resource.Begin
@@ -26,6 +26,7 @@ class NHKViewModel : ViewModel() {
     fun syncNews() {
         val thestate by state
         if (thestate is Resource.Loading) return
+        if (thestate is Resource.Success) return
         viewModelScope.launch { syncNewsInner().collect { response -> state.value = response } }
     }
 
@@ -40,11 +41,10 @@ class NHKViewModel : ViewModel() {
                             }
 
                             override fun onResponse(call: Call, response: Response) {
-
                                 if (response.isSuccessful) {
                                     val bodys = response.body!!.string()
 
-                                    val objs = Json.decodeFromString<NhkNews>(bodys)
+                                    val objs = Json.decodeFromString<List<NhkNews>>(bodys)
                                     state.value = Resource.Success(objs)
                                 }
                             }
