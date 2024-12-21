@@ -1,0 +1,54 @@
+package com.stein.mahoyinkuima.nhk
+
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import java.io.IOException
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
+import okhttp3.Call
+import okhttp3.Callback
+import okhttp3.OkHttpClient
+import okhttp3.Response
+
+private val client = OkHttpClient()
+
+class NHKViewModel : ViewModel() {
+
+    val state = mutableStateOf<Resource<NhkNews>>(Resource.Begin)
+
+    fun clearStatue() {
+        state.value = Resource.Begin
+    }
+
+    fun syncNews() {
+        val thestate by state
+        if (thestate is Resource.Loading) return
+        viewModelScope.launch { syncNewsInner().collect { response -> state.value = response } }
+    }
+
+    private suspend fun syncNewsInner() = flow {
+        emit(Resource.Loading)
+        val request = requestTodayNews()
+        client.newCall(request)
+                .enqueue(
+                        object : Callback {
+                            override fun onFailure(call: Call, e: IOException) {
+                                state.value = Resource.Failure("Unexpected code $e")
+                            }
+
+                            override fun onResponse(call: Call, response: Response) {
+
+                                if (response.isSuccessful) {
+                                    val bodys = response.body!!.string()
+
+                                    val objs = Json.decodeFromString<NhkNews>(bodys)
+                                    state.value = Resource.Success(objs)
+                                }
+                            }
+                        }
+                )
+    }
+}
