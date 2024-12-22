@@ -16,6 +16,14 @@ import okhttp3.Response
 
 private val client = OkHttpClient()
 
+class NhkHtmlModel : ViewModel() {
+    val htmlData = mutableStateOf<String>(EMPTY_HTML)
+
+    fun setData(data: String) {
+        htmlData.value = data
+    }
+}
+
 class NhKViewModel : ViewModel() {
     val state = mutableStateOf<Resource<List<NhkNews>>>(Resource.Begin)
 
@@ -30,7 +38,7 @@ class NhKViewModel : ViewModel() {
         viewModelScope.launch { syncNewsInner().collect { response -> state.value = response } }
     }
 
-    private suspend fun syncNewsInner() = flow {
+    private fun syncNewsInner() = flow {
         emit(Resource.Loading)
         val request = requestTodayNews()
         client.newCall(request)

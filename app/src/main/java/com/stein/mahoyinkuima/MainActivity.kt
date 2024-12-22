@@ -1,9 +1,12 @@
 package com.stein.mahoyinkuima
 
 import android.os.Bundle
+import android.view.ViewGroup
+import android.webkit.WebView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.RowScope
@@ -27,6 +30,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
@@ -34,8 +38,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.stein.mahoyinkuima.common.Resource
-import com.stein.mahoyinkuima.nhk.NewsView
 import com.stein.mahoyinkuima.nhk.NhKViewModel
+import com.stein.mahoyinkuima.nhk.NhkHtmlModel
+import com.stein.mahoyinkuima.nhk.newsHtml
+import com.stein.mahoyinkuima.nhk.newsView
 import com.stein.mahoyinkuima.ui.theme.MahoyinkuimaTheme
 
 class MainActivity : ComponentActivity() {
@@ -48,14 +54,26 @@ class MainActivity : ComponentActivity() {
                 Surface(
                         modifier = Modifier.fillMaxSize(),
                         // color = MaterialTheme.colorScheme.background
-                        ) { PhoneInfoView() }
+                        ) { OverAllView() }
             }
         }
     }
 }
 
 @Composable
-fun PhoneInfoView() {
+fun OverAllView() {
+    val nhkhtml: NhkHtmlModel = viewModel()
+
+    val navController = rememberNavController()
+
+    NavHost(navController = navController, startDestination = OverViewScreen.Main.route) {
+        composable(OverViewScreen.Main.route) { MainView(nhkhtml, navController) }
+        composable(OverViewScreen.News.route) { WebViewScreen(nhkhtml) }
+    }
+}
+
+@Composable
+fun MainView(htmlModel: NhkHtmlModel, upNavController: NavHostController) {
     val navController = rememberNavController()
     val nhkView: NhKViewModel = viewModel()
     nhkView.syncNews()
@@ -64,7 +82,14 @@ fun PhoneInfoView() {
     MaterialTheme {
         Scaffold(bottomBar = { BottomBar(navController) }) { padding ->
             NavHost(navController = navController, startDestination = BottomBarScreen.Home.route) {
-                composable(BottomBarScreen.Home.route) { NhkPackage(model = nhkView, dp = padding) }
+                composable(BottomBarScreen.Home.route) {
+                    NhkPackage(
+                            model = nhkView,
+                            htmlModel = htmlModel,
+                            upNavController = upNavController,
+                            dp = padding
+                    )
+                }
 
                 composable(BottomBarScreen.Settings.route) {
                     Column(
@@ -79,7 +104,12 @@ fun PhoneInfoView() {
 }
 
 @Composable
-fun NhkPackage(model: NhKViewModel, dp: PaddingValues? = null) {
+fun NhkPackage(
+        model: NhKViewModel,
+        htmlModel: NhkHtmlModel,
+        upNavController: NavHostController,
+        dp: PaddingValues? = null
+) {
     val state by model.state
     val glModifier =
             Modifier.fillMaxSize().let done@{
@@ -89,7 +119,13 @@ fun NhkPackage(model: NhKViewModel, dp: PaddingValues? = null) {
     when (val smartCastData = state) {
         is Resource.Success ->
                 LazyColumn(modifier = glModifier) {
-                    items(smartCastData.data) { data -> data.NewsView() }
+                    items(smartCastData.data) { data ->
+                        data.newsView {
+                            htmlModel.setData(data.newsHtml())
+
+                            upNavController.navigate(OverViewScreen.News.route)
+                        }
+                    }
                 }
         else ->
                 Column(
@@ -104,6 +140,25 @@ fun NhkPackage(model: NhKViewModel, dp: PaddingValues? = null) {
 @Composable
 fun DefaultPreview() {
     MahoyinkuimaTheme { /*Greeting("Android") */}
+}
+
+@Composable
+fun WebViewScreen(nhkhtml: NhkHtmlModel) {
+    val HTMLstring = nhkhtml.htmlData.value
+    Box(modifier = Modifier.fillMaxSize()) {
+        AndroidView(
+                factory = {
+                    WebView(it).apply {
+                        layoutParams =
+                                ViewGroup.LayoutParams(
+                                        ViewGroup.LayoutParams.MATCH_PARENT,
+                                        ViewGroup.LayoutParams.MATCH_PARENT
+                                )
+                    }
+                },
+                update = { it.loadDataWithBaseURL(null, HTMLstring, "text/html", "utf-8", null) }
+        )
+    }
 }
 
 @Composable

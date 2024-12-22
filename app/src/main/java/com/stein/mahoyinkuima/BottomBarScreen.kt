@@ -11,3 +11,8 @@ sealed class BottomBarScreen(val route: String, val title: String, val icon: Ima
     data object Settings :
             BottomBarScreen(route = "SETTINGS", title = "SETTINGS", icon = Icons.Default.Settings)
 }
+
+sealed class OverViewScreen(val route: String) {
+    data object Main : OverViewScreen("MAIN")
+    data object News : OverViewScreen("News")
+}

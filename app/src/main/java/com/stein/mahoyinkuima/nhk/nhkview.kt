@@ -1,5 +1,6 @@
 package com.stein.mahoyinkuima.nhk
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,13 +15,13 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 
 @Composable
-fun NhkNews.NewsView(dp: PaddingValues? = null) {
+fun NhkNews.newsView(dp: PaddingValues? = null, onClicked: () -> Unit = {}) {
     val glModifier =
             Modifier.padding(all = 8.dp).fillMaxSize().let done@{
                 if (dp == null) return@done it
                 it.padding(dp)
             }
-    Card(modifier = glModifier) {
+    Card(modifier = glModifier.clickable { onClicked() }) {
         Row {
             AsyncImage(
                     model = imageUrl,
